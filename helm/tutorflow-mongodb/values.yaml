@@ -1,0 +1,18 @@
+mode: operator
+mongodb:
+  name: tutorflow-mongodb
+  version: "8.0.17"
+  members: 3
+  database: novu-db
+  auth: { username: novu, password: "", secretName: tutorflow-mongodb-credentials }
+  storage: { dataSize: 10Gi, logsSize: 2Gi, storageClassName: "" }
+  resources:
+    mongod:
+      requests: { cpu: 250m, memory: 512Mi }
+      limits: { cpu: "1", memory: 2Gi }
+    agent:
+      requests: { cpu: 50m, memory: 128Mi }
+      limits: { cpu: 250m, memory: 256Mi }
+standalone:
+  image: mongo:8.0.17
+  rootPassword: ""

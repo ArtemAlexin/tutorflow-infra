@@ -1,0 +1,4 @@
+mode: standalone
+redis:
+  auth:
+    password: replace-with-redis-password

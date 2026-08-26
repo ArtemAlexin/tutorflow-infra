@@ -1,0 +1,6 @@
+apiVersion: v2
+name: tutorflow-redis
+description: Redis datastore for Tutorflow
+type: application
+version: 0.1.0
+appVersion: "8.4.2"

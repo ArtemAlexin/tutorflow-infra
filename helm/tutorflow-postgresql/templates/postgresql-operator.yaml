@@ -1,0 +1,29 @@
+{{- if eq .Values.mode "operator" }}
+apiVersion: acid.zalan.do/v1
+kind: postgresql
+metadata:
+  name: {{ .Values.postgresql.name }}
+  labels:
+    {{- include "tutorflow-postgresql.labels" . | nindent 4 }}
+spec:
+  teamId: {{ .Values.postgresql.teamId | quote }}
+  numberOfInstances: {{ .Values.postgresql.instances }}
+  postgresql:
+    version: {{ .Values.postgresql.version | quote }}
+  volume:
+    size: {{ .Values.postgresql.volume.size | quote }}
+    {{- with .Values.postgresql.volume.storageClass }}
+    storageClass: {{ . | quote }}
+    {{- end }}
+  resources:
+    {{- toYaml .Values.postgresql.resources | nindent 4 }}
+  users:
+    tutorflow: []
+    temporal: []
+    zitadel: []
+  databases:
+    tutorflow: tutorflow
+    temporal: temporal
+    temporal_visibility: temporal
+    zitadel: zitadel
+{{- end }}

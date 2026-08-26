@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ClaudeCodeTabState">
+    <option name="tabSessions">
+      <map>
+        <entry key="0">
+          <value>
+            <TabSessionState>
+              <option name="provider" value="codex" />
+              <option name="sessionId" value="01a03d68-13b3-7c81-ac95-5c09b714a427" />
+              <option name="cwd" value="C:\Users\artem\IdeaProjects\tutorflow\infra" />
+              <option name="model" value="gpt-5.6-terra" />
+              <option name="permissionMode" value="default" />
+              <option name="reasoningEffort" value="medium" />
+            </TabSessionState>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>

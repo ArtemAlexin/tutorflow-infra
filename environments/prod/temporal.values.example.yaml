@@ -1,0 +1,5 @@
+server:
+  replicaCount: 2
+
+ui:
+  replicaCount: 2

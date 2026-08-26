@@ -1,0 +1,19 @@
+{
+  "$schema" : "https://json-schema.org/draft/2020-12/schema",
+  "$id" : "https://helm-values.fstaudt.github.io/tutorflow-infra/0.1.0/aggregated-values.schema.json",
+  "x-generated-by" : "helm-values 0.12.2",
+  "x-generated-at" : "2026-08-25T17:57:24Z",
+  "title" : "Configuration for chart tutorflow-infra:0.1.0",
+  "description" : "\n\\n",
+  "properties" : {
+    "global" : {
+      "allOf" : [ {
+        "title" : "Aggregated global values for chart tutorflow-infra:0.1.0",
+        "description" : "\n\\n Aggregation of global values of chart and its dependencies: ",
+        "x-intellij-html-description" : "<br>Aggregation of global values of chart and its dependencies: <ul></ul>"
+      } ]
+    }
+  },
+  "unevaluatedProperties" : false,
+  "additionalProperties" : false
+}

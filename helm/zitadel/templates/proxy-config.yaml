@@ -1,0 +1,51 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "zitadel.fullname" . }}-proxy
+  labels:
+    {{- include "zitadel.labels" . | nindent 4 }}
+data:
+  dynamic.yaml: |
+    http:
+      middlewares:
+        strip-api:
+          stripPrefix:
+            prefixes:
+              - /api
+            forceSlash: false
+        root-rewrite:
+          replacePath:
+            path: /ui/v2/login/
+      routers:
+        root:
+          rule: Path(`/`)
+          entryPoints: [web]
+          priority: 400
+          middlewares: [root-rewrite]
+          service: login
+        login:
+          rule: PathPrefix(`/ui/v2/login`)
+          entryPoints: [web]
+          priority: 250
+          service: login
+        api-alias:
+          rule: PathPrefix(`/api`)
+          entryPoints: [web]
+          priority: 200
+          middlewares: [strip-api]
+          service: api
+        canonical:
+          rule: "!PathPrefix(`/ui/v2/login`) && !PathPrefix(`/api`) && !Path(`/`)"
+          entryPoints: [web]
+          priority: 100
+          service: api
+      services:
+        api:
+          loadBalancer:
+            servers:
+              - url: h2c://127.0.0.1:8080
+        login:
+          loadBalancer:
+            servers:
+              - url: http://127.0.0.1:3000
+

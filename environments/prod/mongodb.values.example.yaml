@@ -1,0 +1,9 @@
+mode: operator
+mongodb:
+  members: 3
+  auth:
+    password: replace-with-openssl-rand-hex-32
+  storage:
+    dataSize: 20Gi
+    logsSize: 5Gi
+    # storageClassName: yc-network-ssd

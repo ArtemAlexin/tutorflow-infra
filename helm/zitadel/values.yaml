@@ -1,0 +1,48 @@
+existingSecret: ""
+secrets:
+  masterKey: ""
+  adminUsername: zitadel-admin@zitadel.localhost
+  adminPassword: ""
+
+database:
+  host: tutorflow-postgresql
+  port: 5432
+  name: zitadel
+  secretName: zitadel.tutorflow-postgresql.credentials.postgresql.acid.zalan.do
+  usernameKey: username
+  passwordKey: password
+  sslMode: disable
+
+config:
+  externalDomain: zitadel.localhost
+  externalPort: 8081
+  externalSecure: false
+  loginClientPatExpiration: "2029-01-01T00:00:00Z"
+
+zitadel:
+  image:
+    repository: ghcr.io/zitadel/zitadel
+    tag: v4.16.0
+    pullPolicy: IfNotPresent
+  resources: {}
+
+login:
+  image:
+    repository: ghcr.io/zitadel/zitadel-login
+    tag: v4.16.0
+    pullPolicy: IfNotPresent
+  resources: {}
+
+proxy:
+  image:
+    repository: traefik
+    tag: v3.7.7
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 80
+  resources: {}
+
+bootstrap:
+  storage: 64Mi
+  storageClassName: ""

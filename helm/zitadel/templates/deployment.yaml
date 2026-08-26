@@ -1,0 +1,184 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "zitadel.fullname" . }}
+  labels:
+    {{- include "zitadel.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: zitadel
+      app.kubernetes.io/instance: {{ .Release.Name }}
+      app.kubernetes.io/component: server
+  template:
+    metadata:
+      annotations:
+        checksum/proxy-config: {{ include (print $.Template.BasePath "/proxy-config.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      labels:
+        app.kubernetes.io/name: zitadel
+        app.kubernetes.io/instance: {{ .Release.Name }}
+        app.kubernetes.io/component: server
+    spec:
+      containers:
+        - name: zitadel-api
+          image: "{{ .Values.zitadel.image.repository }}:{{ .Values.zitadel.image.tag }}"
+          imagePullPolicy: {{ .Values.zitadel.image.pullPolicy }}
+          securityContext:
+            runAsUser: 0
+          args: ["start-from-init", "--masterkey", "$(ZITADEL_MASTERKEY)"]
+          ports:
+            - name: api
+              containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: {{ .Values.existingSecret | default (include "zitadel.fullname" .) }}
+          env:
+            - name: ZITADEL_DATABASE_POSTGRES_HOST
+              value: {{ .Values.database.host | quote }}
+            - name: ZITADEL_DATABASE_POSTGRES_PORT
+              value: {{ .Values.database.port | quote }}
+            - name: ZITADEL_DATABASE_POSTGRES_DATABASE
+              value: {{ .Values.database.name | quote }}
+            - name: ZITADEL_DATABASE_POSTGRES_USER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "database.secretName is required" .Values.database.secretName }}
+                  key: {{ .Values.database.usernameKey }}
+            - name: ZITADEL_DATABASE_POSTGRES_USER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "database.secretName is required" .Values.database.secretName }}
+                  key: {{ .Values.database.passwordKey }}
+            - name: ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE
+              value: {{ .Values.database.sslMode | quote }}
+            - name: ZITADEL_DATABASE_POSTGRES_ADMIN_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "database.secretName is required" .Values.database.secretName }}
+                  key: {{ .Values.database.usernameKey }}
+            - name: ZITADEL_DATABASE_POSTGRES_ADMIN_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ required "database.secretName is required" .Values.database.secretName }}
+                  key: {{ .Values.database.passwordKey }}
+            - name: ZITADEL_DATABASE_POSTGRES_ADMIN_SSL_MODE
+              value: {{ .Values.database.sslMode | quote }}
+            - name: ZITADEL_DATABASE_POSTGRES_ADMIN_EXISTINGDATABASE
+              value: {{ .Values.database.name | quote }}
+            - name: ZITADEL_PORT
+              value: "8080"
+            - name: ZITADEL_EXTERNALDOMAIN
+              value: {{ .Values.config.externalDomain | quote }}
+            - name: ZITADEL_EXTERNALPORT
+              value: {{ .Values.config.externalPort | quote }}
+            - name: ZITADEL_EXTERNALSECURE
+              value: {{ .Values.config.externalSecure | quote }}
+            - name: ZITADEL_TLS_ENABLED
+              value: "false"
+            - name: ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORDCHANGEREQUIRED
+              value: "false"
+            - name: ZITADEL_FIRSTINSTANCE_LOGINCLIENTPATPATH
+              value: /zitadel/bootstrap/login-client.pat
+            - name: ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_USERNAME
+              value: login-client
+            - name: ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_NAME
+              value: Local Login Client
+            - name: ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_PAT_EXPIRATIONDATE
+              value: {{ .Values.config.loginClientPatExpiration | quote }}
+            - name: ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED
+              value: "true"
+            - name: ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_BASEURI
+              value: {{ printf "%s://%s:%v/ui/v2/login/" (ternary "https" "http" .Values.config.externalSecure) .Values.config.externalDomain .Values.config.externalPort | quote }}
+            - name: ZITADEL_OIDC_DEFAULTLOGINURLV2
+              value: {{ printf "%s://%s:%v/ui/v2/login/login?authRequest=" (ternary "https" "http" .Values.config.externalSecure) .Values.config.externalDomain .Values.config.externalPort | quote }}
+            - name: ZITADEL_OIDC_DEFAULTLOGOUTURLV2
+              value: {{ printf "%s://%s:%v/ui/v2/login/logout?post_logout_redirect=" (ternary "https" "http" .Values.config.externalSecure) .Values.config.externalDomain .Values.config.externalPort | quote }}
+            - name: ZITADEL_SAML_DEFAULTLOGINURLV2
+              value: {{ printf "%s://%s:%v/ui/v2/login/login?samlRequest=" (ternary "https" "http" .Values.config.externalSecure) .Values.config.externalDomain .Values.config.externalPort | quote }}
+            - name: ZITADEL_LOGSTORE_ACCESS_STDOUT_ENABLED
+              value: "true"
+          startupProbe:
+            exec:
+              command: ["/app/zitadel", "ready"]
+            failureThreshold: 60
+            periodSeconds: 5
+          readinessProbe:
+            exec:
+              command: ["/app/zitadel", "ready"]
+            periodSeconds: 10
+            timeoutSeconds: 5
+          volumeMounts:
+            - name: bootstrap
+              mountPath: /zitadel/bootstrap
+          resources:
+            {{- toYaml .Values.zitadel.resources | nindent 12 }}
+        - name: zitadel-login
+          image: "{{ .Values.login.image.repository }}:{{ .Values.login.image.tag }}"
+          imagePullPolicy: {{ .Values.login.image.pullPolicy }}
+          securityContext:
+            runAsUser: 0
+          ports:
+            - name: login
+              containerPort: 3000
+          env:
+            - name: ZITADEL_API_URL
+              value: http://127.0.0.1:8080
+            - name: NEXT_PUBLIC_BASE_PATH
+              value: /ui/v2/login
+            - name: ZITADEL_SERVICE_USER_TOKEN_FILE
+              value: /zitadel/bootstrap/login-client.pat
+            - name: CUSTOM_REQUEST_HEADERS
+              value: {{ printf "Host:%s,X-Forwarded-Proto:%s" .Values.config.externalDomain (ternary "https" "http" .Values.config.externalSecure) | quote }}
+          startupProbe:
+            httpGet:
+              path: /ui/v2/login/healthy
+              port: login
+            failureThreshold: 60
+            periodSeconds: 5
+          readinessProbe:
+            httpGet:
+              path: /ui/v2/login/healthy
+              port: login
+            periodSeconds: 10
+          volumeMounts:
+            - name: bootstrap
+              mountPath: /zitadel/bootstrap
+              readOnly: true
+          resources:
+            {{- toYaml .Values.login.resources | nindent 12 }}
+        - name: proxy
+          image: "{{ .Values.proxy.image.repository }}:{{ .Values.proxy.image.tag }}"
+          imagePullPolicy: {{ .Values.proxy.image.pullPolicy }}
+          args:
+            - --providers.file.filename=/etc/traefik/dynamic.yaml
+            - --providers.file.watch=true
+            - --entrypoints.web.address=:80
+            - --ping=true
+            - --ping.entrypoint=web
+            - --log.level=INFO
+            - --accesslog=true
+          ports:
+            - name: proxy
+              containerPort: 80
+          readinessProbe:
+            httpGet:
+              path: /ping
+              port: proxy
+            periodSeconds: 10
+          volumeMounts:
+            - name: proxy-config
+              mountPath: /etc/traefik
+              readOnly: true
+          resources:
+            {{- toYaml .Values.proxy.resources | nindent 12 }}
+      volumes:
+        - name: bootstrap
+          persistentVolumeClaim:
+            claimName: {{ include "zitadel.fullname" . }}-bootstrap
+        - name: proxy-config
+          configMap:
+            name: {{ include "zitadel.fullname" . }}-proxy

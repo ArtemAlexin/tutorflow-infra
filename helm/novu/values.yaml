@@ -1,0 +1,117 @@
+image:
+  tag: "3.19.0"
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+
+api:
+  replicaCount: 1
+  imageRepository: ghcr.io/novuhq/novu/api
+  service:
+    type: ClusterIP
+    port: 3000
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
+  extraEnv: []
+
+worker:
+  replicaCount: 1
+  imageRepository: ghcr.io/novuhq/novu/worker
+  port: 3004
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 768Mi
+  extraEnv: []
+
+ws:
+  replicaCount: 1
+  imageRepository: ghcr.io/novuhq/novu/ws
+  service:
+    type: ClusterIP
+    port: 3002
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 384Mi
+  extraEnv: []
+
+dashboard:
+  replicaCount: 1
+  imageRepository: ghcr.io/novuhq/novu/dashboard
+  service:
+    type: ClusterIP
+    port: 4000
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 384Mi
+  extraEnv: []
+
+existingSecret: ""
+secrets:
+  # Generate with: openssl rand -hex 32
+  jwtSecret: ""
+  # Must be exactly 32 characters. Generate with: openssl rand -hex 16
+  storeEncryptionKey: ""
+  # Generate with: openssl rand -hex 32
+  novuSecretKey: ""
+
+mongodb:
+  secretName: tutorflow-mongodb-credentials
+  urlKey: url
+  minPoolSize: 5
+  maxPoolSize: 10
+  autoCreateIndexes: "true"
+
+redis:
+  # The RedisReplication operator maintains this Service so it selects only the current master.
+  host: tutorflow-redis-master
+  port: 6379
+  databaseIndex: 2
+  secretName: tutorflow-redis-password
+  passwordKey: password
+  cacheEnabled: true
+  skipVersionCheck: "false"
+
+config:
+  nodeEnv: production
+  apiRootUrl: ""
+  dashboardUrl: ""
+  websocketUrl: ""
+  subscriberWidgetJwtExpirationTime: 15d
+  apiIdempotencyEnabled: "false"
+  apiRateLimitingEnabled: "false"
+  newMessagesApiResponseEnabled: "true"
+  v2Enabled: "true"
+  emailInlineCssDisabled: "false"
+  useMergedDigestIdEnabled: "false"
+  broadcastQueueChunkSize: "100"
+  multicastQueueChunkSize: "100"
+  newRelicEnabled: "false"
+  newRelicAppName: ""
+  newRelicLicenseKey: ""
+  sentryDsn: ""
+
+probes:
+  startup:
+    failureThreshold: 20
+    periodSeconds: 10
+  readiness:
+    periodSeconds: 10
+  liveness:
+    periodSeconds: 20

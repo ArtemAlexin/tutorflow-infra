@@ -1,0 +1,4 @@
+environments/**/*.values.yaml
+!environments/**/*.values.example.yaml
+
+helm/database-operators/charts/

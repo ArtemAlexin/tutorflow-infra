@@ -1,0 +1,68 @@
+{{- if eq .Values.mode "operator" }}
+{{- $password := required "mongodb.auth.password is required" .Values.mongodb.auth.password }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.mongodb.auth.secretName }}
+  labels:
+    {{- include "tutorflow-mongodb.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  password: {{ $password | quote }}
+  url: {{ printf "mongodb://%s:%s@%s-svc:27017/%s?authSource=admin&replicaSet=%s" (.Values.mongodb.auth.username | urlquery) ($password | urlquery) .Values.mongodb.name .Values.mongodb.database .Values.mongodb.name | quote }}
+---
+apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  name: {{ .Values.mongodb.name }}
+  labels:
+    {{- include "tutorflow-mongodb.labels" . | nindent 4 }}
+spec:
+  type: ReplicaSet
+  members: {{ .Values.mongodb.members }}
+  version: {{ .Values.mongodb.version | quote }}
+  security:
+    authentication:
+      modes: ["SCRAM"]
+  users:
+    - name: {{ .Values.mongodb.auth.username | quote }}
+      db: admin
+      passwordSecretRef:
+        name: {{ .Values.mongodb.auth.secretName }}
+      roles:
+        - name: readWrite
+          db: {{ .Values.mongodb.database | quote }}
+      scramCredentialsSecretName: {{ .Values.mongodb.name }}-scram
+  statefulSet:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: mongod
+              resources:
+                {{- toYaml .Values.mongodb.resources.mongod | nindent 16 }}
+            - name: mongodb-agent
+              resources:
+                {{- toYaml .Values.mongodb.resources.agent | nindent 16 }}
+      volumeClaimTemplates:
+        - metadata:
+            name: data-volume
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            {{- with .Values.mongodb.storage.storageClassName }}
+            storageClassName: {{ . | quote }}
+            {{- end }}
+            resources:
+              requests:
+                storage: {{ .Values.mongodb.storage.dataSize | quote }}
+        - metadata:
+            name: logs-volume
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            {{- with .Values.mongodb.storage.storageClassName }}
+            storageClassName: {{ . | quote }}
+            {{- end }}
+            resources:
+              requests:
+                storage: {{ .Values.mongodb.storage.logsSize | quote }}
+{{- end }}

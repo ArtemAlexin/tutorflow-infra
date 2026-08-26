@@ -1,0 +1,10 @@
+secrets:
+  # Must contain exactly 32 characters and remain stable after initialization.
+  masterKey: replace-with-exactly-32-chars!!!
+  adminUsername: zitadel-admin@zitadel.example.com
+  adminPassword: replace-with-a-long-random-value
+
+config:
+  externalDomain: zitadel.example.com
+  externalPort: 443
+  externalSecure: true

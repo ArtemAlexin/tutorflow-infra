@@ -1,0 +1,6 @@
+apiVersion: v2
+name: zitadel
+description: ZITADEL, Login UI and Traefik proxy for Tutorflow
+type: application
+version: 0.1.0
+appVersion: "4.16.0"

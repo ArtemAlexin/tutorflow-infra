@@ -1,0 +1,107 @@
+{{- if eq .Values.mode "standalone" }}
+{{- $password := required "mongodb.auth.password is required" .Values.mongodb.auth.password }}
+{{- $rootPassword := required "standalone.rootPassword is required" .Values.standalone.rootPassword }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.mongodb.auth.secretName }}
+  labels:
+    {{- include "tutorflow-mongodb.labels" . | nindent 4 }}
+type: Opaque
+stringData:
+  password: {{ $password | quote }}
+  root-password: {{ $rootPassword | quote }}
+  url: {{ printf "mongodb://%s:%s@%s:27017/%s?authSource=%s" (.Values.mongodb.auth.username | urlquery) ($password | urlquery) .Values.mongodb.name .Values.mongodb.database .Values.mongodb.database | quote }}
+  init.js: |
+    const novuDatabase = db.getSiblingDB({{ .Values.mongodb.database | toJson }});
+    novuDatabase.createUser({
+      user: {{ .Values.mongodb.auth.username | toJson }},
+      pwd: process.env.NOVU_MONGODB_PASSWORD,
+      roles: [{ role: "dbOwner", db: {{ .Values.mongodb.database | toJson }} }]
+    });
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.mongodb.name }}
+  labels:
+    {{- include "tutorflow-mongodb.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  selector:
+    app.kubernetes.io/name: {{ .Values.mongodb.name }}
+  ports:
+    - name: mongodb
+      port: 27017
+      targetPort: mongodb
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.mongodb.name }}
+  labels:
+    {{- include "tutorflow-mongodb.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ .Values.mongodb.name }}
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: {{ .Values.mongodb.name }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: {{ .Values.mongodb.name }}
+    spec:
+      containers:
+        - name: mongodb
+          image: {{ .Values.standalone.image }}
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: mongodb
+              containerPort: 27017
+          env:
+            - name: MONGO_INITDB_ROOT_USERNAME
+              value: root
+            - name: MONGO_INITDB_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mongodb.auth.secretName }}
+                  key: root-password
+            - name: NOVU_MONGODB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mongodb.auth.secretName }}
+                  key: password
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "mongosh --quiet --username root --password \"$MONGO_INITDB_ROOT_PASSWORD\" --authenticationDatabase admin --eval \"db.adminCommand('ping').ok\""]
+            periodSeconds: 10
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "mongosh --quiet --username root --password \"$MONGO_INITDB_ROOT_PASSWORD\" --authenticationDatabase admin --eval \"db.adminCommand('ping').ok\""]
+            periodSeconds: 20
+          resources:
+            {{- toYaml .Values.mongodb.resources.mongod | nindent 12 }}
+          volumeMounts:
+            - name: data
+              mountPath: /data/db
+            - name: init
+              mountPath: /docker-entrypoint-initdb.d/10-novu-user.js
+              subPath: init.js
+              readOnly: true
+      volumes:
+        - name: init
+          secret:
+            secretName: {{ .Values.mongodb.auth.secretName }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- with .Values.mongodb.storage.storageClassName }}
+        storageClassName: {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.mongodb.storage.dataSize | quote }}
+{{- end }}

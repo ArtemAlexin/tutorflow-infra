@@ -1,0 +1,7 @@
+mode: standalone
+standalone:
+  superuserPassword: replace-with-postgres-superuser-password
+  credentials:
+    tutorflow: replace-with-tutorflow-password
+    temporal: replace-with-temporal-password
+    zitadel: replace-with-zitadel-password

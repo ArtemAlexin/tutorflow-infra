@@ -1,0 +1,6 @@
+mode: standalone
+mongodb:
+  auth:
+    password: replace-with-novu-mongodb-password
+standalone:
+  rootPassword: replace-with-mongodb-root-password

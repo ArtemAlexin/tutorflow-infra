@@ -1,0 +1,9 @@
+mode: operator
+redis:
+  replicas: 3
+  sentinelReplicas: 3
+  auth:
+    password: replace-with-a-long-random-value
+  storage:
+    size: 10Gi
+    # storageClassName: yc-network-ssd

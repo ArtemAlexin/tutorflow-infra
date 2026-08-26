@@ -1,0 +1,12 @@
+config:
+  externalDomain: zitadel.localhost
+  externalPort: 8081
+  externalSecure: false
+  loginClientPatExpiration: "2029-01-01T00:00:00Z"
+
+secrets:
+  # Must contain exactly 32 characters and must not change after initialization.
+  masterKey: replace-with-exactly-32-chars!!!
+  adminUsername: zitadel-admin@zitadel.localhost
+  adminPassword: replace-me
+

@@ -1,0 +1,6 @@
+mode: operator
+postgresql:
+  instances: 2
+  volume:
+    size: 20Gi
+    # storageClass: yc-network-ssd

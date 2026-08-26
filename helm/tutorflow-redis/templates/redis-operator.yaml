@@ -1,0 +1,77 @@
+{{- if eq .Values.mode "operator" }}
+apiVersion: redis.redis.opstreelabs.in/v1beta2
+kind: RedisReplication
+metadata:
+  name: {{ .Values.redis.name }}
+  labels:
+    {{- include "tutorflow-redis.labels" . | nindent 4 }}
+spec:
+  clusterSize: {{ .Values.redis.replicas }}
+  kubernetesConfig:
+    image: {{ .Values.redis.image }}
+    imagePullPolicy: IfNotPresent
+    redisSecret:
+      name: {{ include "tutorflow-redis.passwordSecretName" . }}
+      key: {{ .Values.redis.auth.passwordKey }}
+    resources:
+      {{- toYaml .Values.redis.resources.redis | nindent 6 }}
+  storage:
+    volumeClaimTemplate:
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        {{- with .Values.redis.storage.storageClassName }}
+        storageClassName: {{ . | quote }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.redis.storage.size | quote }}
+  podSecurityContext:
+    runAsUser: 1000
+    fsGroup: 1000
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              app: {{ .Values.redis.name }}
+  pdb:
+    enabled: {{ gt (int .Values.redis.replicas) 1 }}
+    minAvailable: {{ max 1 (sub (int .Values.redis.replicas) 1) }}
+---
+apiVersion: redis.redis.opstreelabs.in/v1beta2
+kind: RedisSentinel
+metadata:
+  name: {{ .Values.redis.name }}
+  labels:
+    {{- include "tutorflow-redis.labels" . | nindent 4 }}
+spec:
+  clusterSize: {{ .Values.redis.sentinelReplicas }}
+  redisSentinelConfig:
+    redisReplicationName: {{ .Values.redis.name }}
+    redisReplicationPassword:
+      secretKeyRef:
+        name: {{ include "tutorflow-redis.passwordSecretName" . }}
+        key: {{ .Values.redis.auth.passwordKey }}
+  kubernetesConfig:
+    image: {{ .Values.redis.sentinelImage }}
+    imagePullPolicy: IfNotPresent
+    redisSecret:
+      name: {{ include "tutorflow-redis.passwordSecretName" . }}
+      key: {{ .Values.redis.auth.passwordKey }}
+    resources:
+      {{- toYaml .Values.redis.resources.sentinel | nindent 6 }}
+  podSecurityContext:
+    runAsUser: 1000
+    fsGroup: 1000
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+        - topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              app: {{ .Values.redis.name }}-sentinel
+  pdb:
+    enabled: {{ gt (int .Values.redis.sentinelReplicas) 1 }}
+    minAvailable: {{ max 1 (sub (int .Values.redis.sentinelReplicas) 1) }}
+{{- end }}

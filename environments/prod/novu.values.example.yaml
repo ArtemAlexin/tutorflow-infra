@@ -1,0 +1,42 @@
+image:
+  tag: "3.19.0"
+
+secrets:
+  jwtSecret: replace-with-openssl-rand-hex-32
+  storeEncryptionKey: replace-with-32-byte-key-value!!
+  novuSecretKey: replace-with-openssl-rand-hex-32
+
+config:
+  apiRootUrl: https://novu-api.example.com
+  dashboardUrl: https://novu.example.com
+  websocketUrl: https://novu-ws.example.com
+
+api:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+worker:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 250m
+      memory: 512Mi
+    limits:
+      cpu: "1"
+      memory: 1Gi
+
+ws:
+  replicaCount: 2
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
