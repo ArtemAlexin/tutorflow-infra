@@ -1,0 +1,16 @@
+apiVersion: v2
+name: database-operators
+description: Production database operators used by Tutorflow
+type: application
+version: 0.2.0
+
+dependencies:
+  - name: postgres-operator
+    version: 2.0.2
+    repository: https://opensource.zalando.com/postgres-operator/charts/postgres-operator
+  - name: redis-operator
+    version: 0.26.1
+    repository: https://ot-container-kit.github.io/helm-charts/
+  - name: mongodb-kubernetes
+    version: 1.10.0
+    repository: https://mongodb.github.io/helm-charts

@@ -1,0 +1,12 @@
+dependencies:
+- name: postgres-operator
+  repository: https://opensource.zalando.com/postgres-operator/charts/postgres-operator
+  version: 2.0.2
+- name: redis-operator
+  repository: https://ot-container-kit.github.io/helm-charts/
+  version: 0.26.1
+- name: mongodb-kubernetes
+  repository: https://mongodb.github.io/helm-charts
+  version: 1.10.0
+digest: sha256:7a438f6b5ea440068358484d9b5a22dd6970acf39ab83501014937c731352e63
+generated: "2026-08-26T12:44:58.1669627+03:00"

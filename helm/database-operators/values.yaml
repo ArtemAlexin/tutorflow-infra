@@ -1,0 +1,46 @@
+postgres-operator:
+  configKubernetes:
+    watched_namespace: tutorflow-prod
+    enable_pod_antiaffinity: true
+    pod_antiaffinity_preferred_during_scheduling: false
+    enable_pod_disruption_budget: true
+    pod_antiaffinity_topology_key: kubernetes.io/hostname
+  configGeneral:
+    workers: 2
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+
+redis-operator:
+  redisOperator:
+    watchNamespace: tutorflow-prod
+    metrics:
+      enabled: true
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 250m
+      memory: 256Mi
+  rbac:
+     scope: namespace
+
+mongodb-kubernetes:
+  operator:
+    watchNamespace: tutorflow-prod
+    watchedResources:
+      - mongodbcommunity
+    createResourcesServiceAccountsAndRoles: true
+    enableClusterMongoDBRoles: false
+    resources:
+      requests:
+        cpu: 50m
+        memory: 128Mi
+      limits:
+        cpu: 250m
+        memory: 256Mi
